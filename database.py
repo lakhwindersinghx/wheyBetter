@@ -13,7 +13,5 @@ def connect_to_database():
         return conn
     except mysql.connector.Error as err:
         print(f"Error: {err}")
-        return None
+        raise  # Let the calling function handle the exception
 
-if __name__ == "__main__":
-    connect_to_database()
