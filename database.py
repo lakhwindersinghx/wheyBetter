@@ -1,17 +1,17 @@
-import mysql.connector
-from config import Config
+import pymysql
 
-def connect_to_database():
+def connect_to_mysql():
     try:
-        conn = mysql.connector.connect(
-            host=Config.MYSQL_HOST,
-            user=Config.MYSQL_USER,
-            password=Config.MYSQL_PASSWORD,
-            database=Config.MYSQL_DB
+        # Establish the connection
+        connection = pymysql.connect(
+            host="127.0.0.1",
+            user="root",
+            password="1721",
+            database="whey_protein",
+            cursorclass=pymysql.cursors.DictCursor  # Ensures results are returned as dictionaries
         )
-        print("Database connection successful!")
-        return conn
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
-        raise  # Let the calling function handle the exception
-
+        print("Successfully connected to MySQL!")
+        return connection  # Return the connection for use elsewhere
+    except pymysql.MySQLError as e:
+        print("Error while connecting to MySQL:", e)
+        return None  # Return None to indicate a failure

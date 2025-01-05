@@ -18,10 +18,25 @@ def allowed_file(filename):
 
 def clean_extracted_text(extracted_text):
     """Clean and structure the extracted text to get a list of ingredients."""
-    # Remove common prefixes and split the text
+    # Remove common prefixes and split text by commas
     extracted_text = extracted_text.replace("Ingredients:", "").strip()
-    ingredients = [ingredient.strip() for ingredient in extracted_text.split(",") if ingredient.strip()]
+    ingredients = extracted_text.replace("\n", " ").split(",")  # Replace newlines and split
+    ingredients = [ingredient.strip() for ingredient in ingredients if ingredient.strip()]
     return ingredients
+
+def split_nested_ingredients(ingredients):
+    split_ingredients = []
+    for ingredient in ingredients:
+        # Split nested ingredients within parentheses
+        if "(" in ingredient and ")" in ingredient:
+            base, nested = ingredient.split("(", 1)
+            nested = nested.rstrip(")")
+            split_ingredients.append(base.strip())
+            split_ingredients.extend([sub.strip() for sub in nested.split(",")])
+        else:
+            split_ingredients.append(ingredient)
+    return split_ingredients
+
 
 @image_upload_bp.route("/upload-label", methods=["POST"])
 def upload_label():
@@ -43,16 +58,18 @@ def upload_label():
         print(f"Extracted text: {extracted_text}")
   
 
-        ingredients = clean_extracted_text(extracted_text)
+        cleaned_ingredients = clean_extracted_text(extracted_text)
+        final_ingredients = split_nested_ingredients(cleaned_ingredients)
         print("after cleaning")
         # Analyze the extracted ingredients
-        analysis_result = analyze_ingredients(ingredients)
+        analysis_result = analyze_ingredients(final_ingredients)
         print("after analysis")
 
         return jsonify({
             "message": "File uploaded successfully",
             "extracted_text": extracted_text,
-            "cleaned_ingredients": ingredients,
+            "cleaned_ingredients": cleaned_ingredients,
+            "final_ingredients": final_ingredients,
             "analysis": analysis_result
         }), 200
     except Exception as e:

@@ -1,5 +1,31 @@
-from database import connect_to_database
+from database import connect_to_mysql
 from utils.scoring import calculate_score
+
+
+def add_ingredient_to_database(ingredient):
+    try:
+        conn = connect_to_mysql()
+        if conn is None:
+            print("Failed to connect to the database.")
+            return False
+
+        with conn.cursor() as cursor:
+            # Insert ingredient with default values
+            cursor.execute(
+                """
+                INSERT INTO ingredients (ingredient, category, impact, notes)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (ingredient, "unknown", "Unknown impact", "Added dynamically")
+            )
+            conn.commit()
+            print(f"Ingredient '{ingredient}' added to the database with default values.")
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error while adding ingredient '{ingredient}': {e}")
+        return False
+
 
 def analyze_ingredients(ingredients):
     try:
@@ -13,40 +39,57 @@ def analyze_ingredients(ingredients):
         }
 
         print("Connecting to database...")
-        # Connect to the database
-        conn = connect_to_database()
-        cursor = conn.cursor(dictionary=True)
-        print("Database connection established.")
+        conn = connect_to_mysql()
 
-        for ingredient in ingredients:
-            print(f"Processing ingredient: {ingredient}")
-            # Query the database
-            cursor.execute("SELECT category, impact, notes FROM ingredients WHERE ingredient = %s", (ingredient,))
-            result = cursor.fetchone()
+        # Handle database connection failure
+        if conn is None:
+            print("Failed to connect to the database.")
+            raise Exception("Database connection failed.")
 
-            if result:
-                print(f"Found in database: {result}")
-                # Categorize based on database result
-                category = result["category"].lower()
-                if category in response:
-                    response[category].append(ingredient)
+        # Use a cursor for database operations
+        with conn.cursor() as cursor:
+            print("Database connection established.")
+
+            for ingredient in ingredients:
+                print(f"Processing ingredient: {ingredient}")
+                # Query the database
+                cursor.execute(
+                    "SELECT category, impact, notes FROM ingredients WHERE ingredient = %s",
+                    (ingredient,)
+                )
+                result = cursor.fetchone()
+
+                if result:
+                    print(f"Found in database: {result}")
+                    # Categorize based on database result
+                    category = result["category"].lower()
+                    if category in response:
+                        response[category].append(ingredient)
+                    else:
+                        response["neutral"].append(ingredient)
                 else:
-                    response["neutral"].append(ingredient)
-            else:
-                print(f"Not found in database: {ingredient}")
-                # Mark as unknown if the ingredient is not in the database
-                response["unknown"].append(ingredient)
+                    print(f"Not found in database: {ingredient}")
+                    # Mark as unknown if the ingredient is not in the database
+                    response["unknown"].append(ingredient)
+                    # Add the missing ingredient to the database
+                    add_ingredient_to_database(ingredient)
 
         # Add a score based on categories
         print("Calculating score...")
-        response["score"] = calculate_score(response["high_quality"], response["fillers"], response["artificial"])
+        response["score"] = calculate_score(
+            response["high_quality"],
+            response["fillers"],
+            response["artificial"],
+            response["unknown"],
+            response["neutral"]
+        )
 
-        # Close database connection
-        cursor.close()
+        # Close the database connection
         conn.close()
         print("Database connection closed.")
 
         return response
+
     except Exception as e:
         print(f"Error in analyze_ingredients: {e}")
         raise
