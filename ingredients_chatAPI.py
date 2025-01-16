@@ -4,8 +4,7 @@ from time import sleep  # To prevent hitting rate limits
 from database import connect_to_mysql
 
 # Set up OpenAI API Key
-openai.api_key = "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"
-
+openai.api_key =  ${{ secrets.API_KEY }}
 # Generate concise prompts
 def generate_prompt(ingredient):
     return f"""
