@@ -5,7 +5,7 @@ from time import sleep
 from database import connect_to_mysql
 
 # Set up OpenAI API Key
-openai.api_key = "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"
+openai.api_key = ""
 
 # Measurement Patterns to Remove
 MEASUREMENT_PATTERNS = [
