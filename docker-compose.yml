@@ -2,30 +2,17 @@ version: "3.8"
 
 services:
   backend:
-    build: .
+    build: .  # Build the Python backend from Dockerfile in the current directory
     ports:
-      - "5000:5000"
+      - "5000:5000"  # Expose backend API on port 5000
     environment:
-      - DATABASE_URL=mysql://user:1721@db:3306/whey_protein_auth
+      - DATABASE_URL=mysql://root:1721@db:3306/whey_protein  # Database connection
     depends_on:
-      - db
+      - db  # Start backend only after MySQL is running
 
   frontend:
-    build: ./ShadFrontend/whey_protein  # Correct path to frontend Dockerfile
+    build: ./ShadFrontend/whey_protein  # Path to Next.js Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:3000"  # Expose frontend on port 3000
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:5000/api
-    depends_on:
-      - backend
-
-  db:
-    image: mysql:8
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: whey_protein_auth
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    ports:
-      - "3306:3306"
+      -
